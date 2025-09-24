@@ -6,3 +6,4 @@ google-genai==1.7.0
 sqlite-utils
 pysqlite3-binary
 google-api-core
+python-multipart
