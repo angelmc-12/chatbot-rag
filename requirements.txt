@@ -1,6 +1,8 @@
-fastapi
-uvicorn[standard]
-google-genai==1.7.0
-google-api-core>=2.15.0
+fastapi==0.110.0
+uvicorn==0.29.0
+numpy==1.26.4
 chromadb==0.4.22
+google-genai==1.7.0
 sqlite-utils
+pysqlite3-binary
+google-api-core
