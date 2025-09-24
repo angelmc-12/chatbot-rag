@@ -47,7 +47,7 @@ def get_recent_history(session_id, n_turns=5):
     return list(reversed(rows))
 
 # ========================
-# ChromaDB
+# ChromaDB con información de Techy
 # ========================
 class GeminiEmbeddingFunction(chromadb.EmbeddingFunction):
     document_mode = True
@@ -64,14 +64,22 @@ class GeminiEmbeddingFunction(chromadb.EmbeddingFunction):
 embed_fn = GeminiEmbeddingFunction()
 chroma_client = chromadb.Client()
 knowledge_db = chroma_client.get_or_create_collection(
-    name="googlecar_docs", embedding_function=embed_fn
+    name="techy_docs", embedding_function=embed_fn
 )
 
-# Documentos de ejemplo
+# Documentos de ejemplo sobre Techy (puedes ampliarlos si quieres más contexto)
 documents = [
-    "Operating the Climate Control System: Use the knobs to adjust temperature, airflow, fan speed, and modes (Auto, Cool, Heat, Defrost).",
-    "Touchscreen Display: Access navigation, entertainment, and climate control by tapping icons.",
-    "Shifting Gears: Park, Reverse, Neutral, Drive, Low (for slippery conditions)."
+    "Techy es una ONG peruana fundada por Angel, Brisa y Max enfocada en educación en ciencia de datos y tecnologías emergentes.",
+    "Misión: democratizar el acceso al conocimiento en ciencia de datos y machine learning para jóvenes de sectores menos favorecidos.",
+    "Visión: formar una generación de científicos de datos peruanos que aporten soluciones innovadoras a problemas locales y globales.",
+    "Programas escolares: introducción a Python, fundamentos de machine learning, proyectos aplicados, retos gamificados.",
+    "Programa universitario: malla curricular en Python, Numpy, Pandas, visualización y machine learning. Duración: 8 sesiones con reto final.",
+    "Programa voluntarios: formación de formadores, inducción sobre Techy, creación de FAQs y guías.",
+    "Áreas de gestión: innovación educativa, alianzas estratégicas, operaciones y finanzas, evaluación y seguimiento.",
+    "Estrategias pedagógicas: gamificación, aprendizaje basado en proyectos, mentoría personalizada y capacitación docente.",
+    "Desafíos: financiamiento sostenible, brecha digital, retención de estudiantes y construcción de credibilidad.",
+    "Fortalezas: fundadores expertos en data science, claridad en misión y visión, enfoque innovador, red de contactos educativos y tecnológicos.",
+    "Próximos pasos: finalizar malla curricular del piloto, alianzas con colegios y ONGs, ejecutar piloto universitario, elaborar reportes de impacto."
 ]
 knowledge_db.add(documents=documents, ids=[str(i) for i in range(len(documents))])
 
@@ -80,18 +88,20 @@ knowledge_db.add(documents=documents, ids=[str(i) for i in range(len(documents))
 # ========================
 def build_prompt(session_id, user_query, retrieved_docs):
     history = get_recent_history(session_id, n_turns=5)
-    prompt = "Eres un asistente de autos. Usa historial + docs para responder.\n\n"
+    prompt = "Eres un asistente especializado en Techy, una ONG peruana de educación en ciencia de datos. Usa el historial y los documentos para responder en español, con un tono claro e inspirador.\n\n"
     for role, content in history:
         prompt += f"{role.capitalize()}: {content}\n"
-    prompt += f"\nPregunta actual: {user_query}\n\n"
-    for doc in retrieved_docs:
-        prompt += f"- {doc}\n"
+    prompt += f"\nPregunta actual del usuario: {user_query}\n\n"
+    if retrieved_docs:
+        prompt += "Pasajes relevantes recuperados:\n"
+        for doc in retrieved_docs:
+            prompt += f"- {doc}\n"
     return prompt
 
 def conversational_rag(session_id, user_query):
     save_message(session_id, "user", user_query)
     embed_fn.document_mode = False
-    result = knowledge_db.query(query_texts=[user_query], n_results=2)
+    result = knowledge_db.query(query_texts=[user_query], n_results=3)
     retrieved_docs = result["documents"][0] if result["documents"] else []
     prompt = build_prompt(session_id, user_query, retrieved_docs)
     response = client.models.generate_content(
@@ -103,15 +113,14 @@ def conversational_rag(session_id, user_query):
     return answer
 
 # ========================
-# API FastAPI
+# API FastAPI (adaptado a Twilio)
 # ========================
 app = FastAPI()
 
 @app.get("/")
 def home():
-    return {"status": "ok", "message": "Chatbot RAG corriendo 🚀"}
+    return {"status": "ok", "message": "Chatbot Techy corriendo 🚀"}
 
-# Adaptado a Twilio
 @app.post("/webhook")
 async def webhook(request: Request):
     form = await request.form()
@@ -122,6 +131,4 @@ async def webhook(request: Request):
         return PlainTextResponse("No recibí un mensaje válido 📭")
     
     answer = conversational_rag(session_id, user_message)
-    
-    # Twilio espera respuesta en texto plano o TwiML
     return PlainTextResponse(answer)
