@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.responses import PlainTextResponse
 import sqlite3
 import chromadb
 from google import genai
@@ -9,9 +10,7 @@ import os
 # ========================
 # Configuración de Gemini
 # ========================
-# GOOGLE_API_KEY = "TU_API_KEY"  # en Render lo pondrás como variable de entorno
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
 # ========================
@@ -32,8 +31,10 @@ CREATE TABLE IF NOT EXISTS chat_history (
 conn.commit()
 
 def save_message(session_id, role, content):
-    cursor.execute("INSERT INTO chat_history (session_id, role, content) VALUES (?, ?, ?)", 
-                   (session_id, role, content))
+    cursor.execute(
+        "INSERT INTO chat_history (session_id, role, content) VALUES (?, ?, ?)", 
+        (session_id, role, content)
+    )
     conn.commit()
 
 def get_recent_history(session_id, n_turns=5):
@@ -66,6 +67,7 @@ knowledge_db = chroma_client.get_or_create_collection(
     name="googlecar_docs", embedding_function=embed_fn
 )
 
+# Documentos de ejemplo
 documents = [
     "Operating the Climate Control System: Use the knobs to adjust temperature, airflow, fan speed, and modes (Auto, Cool, Heat, Defrost).",
     "Touchscreen Display: Access navigation, entertainment, and climate control by tapping icons.",
@@ -109,10 +111,17 @@ app = FastAPI()
 def home():
     return {"status": "ok", "message": "Chatbot RAG corriendo 🚀"}
 
+# Adaptado a Twilio
 @app.post("/webhook")
-async def webhook(req: Request):
-    data = await req.json()
-    user_message = data.get("message", "")
-    session_id = data.get("session_id", "default_user")
+async def webhook(request: Request):
+    form = await request.form()
+    user_message = form.get("Body", "")
+    session_id = form.get("From", "default_user")
+    
+    if not user_message:
+        return PlainTextResponse("No recibí un mensaje válido 📭")
+    
     answer = conversational_rag(session_id, user_message)
-    return {"reply": answer}
+    
+    # Twilio espera respuesta en texto plano o TwiML
+    return PlainTextResponse(answer)
