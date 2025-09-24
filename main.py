@@ -9,6 +9,8 @@ from google.api_core import retry
 # Configuración de Gemini
 # ========================
 # GOOGLE_API_KEY = "TU_API_KEY"  # en Render lo pondrás como variable de entorno
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
 # ========================
