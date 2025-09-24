@@ -1,5 +1,6 @@
 fastapi
-uvicorn
+uvicorn[standard]
 google-genai==1.7.0
-chromadb==0.6.3
+google-api-core>=2.15.0
+chromadb==0.4.22
 sqlite-utils
